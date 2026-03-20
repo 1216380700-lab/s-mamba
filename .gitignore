@@ -1,0 +1,24 @@
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 模型权重
+checkpoints/
+
+# 数据集
+dataset/
+
+# 实验结果
+results/
+test_results/
+
+# 日志与临时文件
+*.log
+*.txt
+*.npy
+*.npz
+
+# Mac 系统文件
+.DS_Store
+
