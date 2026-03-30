@@ -1,6 +1,6 @@
 export CUDA_VISIBLE_DEVICES=2
 
-model_name=S_Mamba
+model_name=S_Mamba_AFFB
 
 python -u run.py \
   --is_training 1 \

@@ -1,5 +1,13 @@
 import torch
 import torch.nn as nn
+import sys
+import os
+
+# Add the parent directory to sys.path to allow importing from 'layers'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
 from layers.Mamba_EncDec import Encoder, EncoderLayer
 from layers.Embed import DataEmbedding_inverted
 
@@ -92,3 +100,27 @@ class Model(nn.Module):
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
         return dec_out[:, -self.pred_len:, :]  # [B, L, D]
+
+
+if __name__ == '__main__':
+    class Configs:
+        def __init__(self):
+            self.seq_len = 96
+            self.pred_len = 96
+            self.output_attention = False
+            self.use_norm = True
+            self.d_model = 512
+            self.embed = 'timeF'
+            self.freq = 'h'
+            self.dropout = 0.1
+            self.class_strategy = 'projection'
+            self.d_state = 16
+            self.d_ff = 2048
+            self.activation = 'gelu'
+            self.e_layers = 2
+
+    configs = Configs()
+    smamba = Model(configs=configs)
+    
+    print("Parameter count:", sum(p.numel() for p in smamba.parameters()))
+    print(smamba)
