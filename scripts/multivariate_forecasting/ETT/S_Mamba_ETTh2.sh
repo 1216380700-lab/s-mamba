@@ -1,6 +1,6 @@
 export CUDA_VISIBLE_DEVICES=6
 
-model_name=S_Mamba_AFFB
+model_name=S_Mamba_Stationary_BiIDMB_GateAFFB_V1.0
 # d state 2
 python -u run.py \
   --is_training 1 \

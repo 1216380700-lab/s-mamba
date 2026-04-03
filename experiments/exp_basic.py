@@ -36,6 +36,10 @@ class Exp_Basic(object):
 
             'S_Mamba': S_Mamba,
             'S_Mamba_AFFB': S_Mamba,
+            'S_Mamba_GateAFFB': S_Mamba,
+            'S_Mamba_BiIDMB': S_Mamba,
+            'S_Mamba_BiIDMB_GateAFFB': S_Mamba,
+            'S_Mamba_Stationary_BiIDMB_GateAFFB': S_Mamba,
         }
         self.device = self._acquire_device()
         self.model = self._build_model().to(self.device)
