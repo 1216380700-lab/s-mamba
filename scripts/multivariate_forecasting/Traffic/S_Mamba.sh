@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=3
 
 model_name=S_Mamba_Stationary_BiIDMB_GateAFFB_V1.0
 
