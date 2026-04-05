@@ -51,10 +51,18 @@ class Model(nn.Module):
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
+
+        # [独家创新点：动态条件跳跃残差门 (Dynamic Gated Subsumption Bypass)]
+        # 它不是一个粗暴的固定常数，而是一个全连接层。让网络能根据每个交通节点（变量）的具体特征，
+        # 自适应地决定“这根水管应该对这个路口开多大”。
+        self.skip_gate = nn.Linear(configs.d_model, configs.d_model)
+        # 初始化非常重要：-2.0 大约对应 Sigmoid 的 11% 开启率。
+        # 意思是“默认主要信任 V1.0 的深层滤波，只有遇到极度刁钻的短步长突变时，才由反向传播把门动态拉开”
+        torch.nn.init.constant_(self.skip_gate.bias, -2.0)
+        torch.nn.init.zeros_(self.skip_gate.weight)
+
         self.projector = nn.Linear(configs.d_model, configs.pred_len, bias=True)
-        
-        # 宏观残差权重：初始化偏向一个较小的值，让优化器动态决定是否启用"原始高频"直连
-        self.macro_weight = nn.Parameter(torch.ones(1) * 0.1)
+
     # a = self.get_parameter_number()
     #
     # def get_parameter_number(self):
@@ -95,7 +103,8 @@ class Model(nn.Module):
         
         # [宏观级跳跃连接 / Subsumption Architecture] 
         # 将原始高频信息强行透传到预测头，由模型自适应决定利用多少"未平滑"的原始序列
-        enc_out = enc_out + self.macro_weight * raw_enc_out
+        gate = torch.sigmoid(self.skip_gate(raw_enc_out))
+        enc_out = enc_out + gate * raw_enc_out
 
         # B N E -> B N S -> B S N 
         dec_out = self.projector(enc_out).permute(0, 2, 1)[:, :, :N] # filter the covariates
