@@ -8,7 +8,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from layers.Mamba_EncDec import Encoder, EncoderLayer
+from layers.Mamba_EncDec import Encoder, EncoderLayer, AdaptiveFourierFilterBlock
 from layers.Embed import DataEmbedding_inverted
 
 from mamba_ssm import Mamba
@@ -27,6 +27,8 @@ class Model(nn.Module):
         self.enc_embedding = DataEmbedding_inverted(configs.seq_len, configs.d_model, configs.embed, configs.freq,
                                                     configs.dropout)
         self.class_strategy = configs.class_strategy
+        # [创新点: 串行解耦] 阶段1 - 频域时序降噪
+        self.affb_frontend = AdaptiveFourierFilterBlock(configs.seq_len)
         # Encoder-only architecture
         self.encoder = Encoder(
             [
@@ -51,6 +53,9 @@ class Model(nn.Module):
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
+
+
+
         self.projector = nn.Linear(configs.d_model, configs.pred_len, bias=True)
         
         # 动态门控宏观残差 (V1.2 Upgrade: Dynamic Gated Bypass)
@@ -78,6 +83,10 @@ class Model(nn.Module):
             x_enc = x_enc - means
             stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
             x_enc /= stdev
+
+        # ---- 串行解耦阶段1：在物理时间轴上做可学习的频域滤波与降噪 ----
+        # Data shape is [Batch, Length(Time), Variate], true time is dim=1
+        x_enc = self.affb_frontend(x_enc)
 
         _, _, N = x_enc.shape # B L N
         # B: batch_size;    E: d_model; 
