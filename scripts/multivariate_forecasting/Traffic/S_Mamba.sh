@@ -1,6 +1,6 @@
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=1
 
-model_name=S_Mamba_Stationary_BiIDMB_GateAFFB_V1.3
+model_name=S_Mamba_Patch
 
 python -u run.py \
   --is_training 1 \
@@ -11,14 +11,17 @@ python -u run.py \
   --data custom \
   --features M \
   --seq_len 96 \
+  --patch_len 24 \
+  --stride 12 \
   --pred_len 96 \
-  --e_layers 4 \
+  --e_layers 2 \
   --enc_in 862 \
   --dec_in 862 \
   --c_out 862 \
   --des 'Exp' \
-  --d_model 512 \
-  --d_ff 512 \
+  --d_model 128 \
+  --d_ff 128 \
+  --d_state 16 \
   --batch_size 16 \
   --learning_rate 0.001 \
   --itr 1
@@ -32,14 +35,17 @@ python -u run.py \
   --data custom \
   --features M \
   --seq_len 96 \
+  --patch_len 24 \
+  --stride 12 \
   --pred_len 192 \
-  --e_layers 4 \
+  --e_layers 2 \
   --enc_in 862 \
   --dec_in 862 \
   --c_out 862 \
   --des 'Exp' \
-  --d_model 512 \
-  --d_ff 512 \
+  --d_model 128 \
+  --d_ff 128 \
+  --d_state 16 \
   --batch_size 16 \
   --learning_rate 0.001 \
   --itr 1
@@ -53,14 +59,17 @@ python -u run.py \
   --data custom \
   --features M \
   --seq_len 96 \
+  --patch_len 24 \
+  --stride 12 \
   --pred_len 336 \
-  --e_layers 4 \
+  --e_layers 2 \
   --enc_in 862 \
   --dec_in 862 \
   --c_out 862 \
   --des 'Exp' \
-  --d_model 512 \
-  --d_ff 512 \
+  --d_model 128 \
+  --d_ff 128 \
+  --d_state 16 \
   --batch_size 16 \
   --learning_rate 0.002 \
   --itr 1
@@ -74,15 +83,18 @@ python -u run.py \
   --data custom \
   --features M \
   --seq_len 96 \
+  --patch_len 24 \
+  --stride 12 \
   --pred_len 720 \
-  --e_layers 4 \
+  --e_layers 2 \
   --enc_in 862 \
   --dec_in 862 \
   --c_out 862 \
   --c_out 862 \
   --des 'Exp' \
-  --d_model 512 \
-  --d_ff 512 \
+  --d_model 128 \
+  --d_ff 128 \
+  --d_state 16 \
   --batch_size 16 \
   --learning_rate 0.0008\
   --itr 1

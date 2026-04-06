@@ -16,8 +16,8 @@ if __name__ == '__main__':
     # basic config
     parser.add_argument('--is_training', type=int, required=True, default=1, help='status')
     parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
-    parser.add_argument('--model', type=str, required=True, default='S_Mamba_AFFB',
-                        help='model name, options: [iTransformer, iInformer, iReformer, iFlowformer, iFlashformer, S_Mamba, S_Mamba_AFFB]')
+    parser.add_argument('--model', type=str, required=True, default='S_Mamba_Patch',
+                        help='model name, options: [iTransformer, iInformer, iReformer, iFlowformer, iFlashformer, S_Mamba, S_Mamba_Patch, S_Mamba_FrontAFFB, S_Mamba_BiIDMB, S_Mamba_BiIDMB_GateAFFB]')
 
     # data loader
     parser.add_argument('--data', type=str, required=True, default='custom', help='dataset type')
@@ -32,6 +32,8 @@ if __name__ == '__main__':
 
     # forecasting task
     parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
+    parser.add_argument('--patch_len', type=int, default=16, help='patch length')
+    parser.add_argument('--stride', type=int, default=8, help='stride')
     parser.add_argument('--label_len', type=int, default=48, help='start token length') # no longer needed in inverted Transformers
     parser.add_argument('--pred_len', type=int, default=96, help='prediction sequence length')
 
@@ -89,6 +91,20 @@ if __name__ == '__main__':
     parser.add_argument('--d_state', type=int, default=32, help='parameter of Mamba Block')
 
     args = parser.parse_args()
+
+    model_name_aliases = {
+        'S_Mamba_Patch': 'S_Mamba_Patch_FrontAFFB',
+        'S_Mamba_AFFB': 'S_Mamba_FrontAFFB',
+        'S_Mamba_GateAFFB': 'S_Mamba_FrontGateAFFB',
+        'S_Mamba_BiIDMB': 'S_Mamba_BiIDMB',
+        'S_Mamba_BiIDMB_GateAFFB': 'S_Mamba_BiIDMB_GateAFFB',
+        'S_Mamba_Stationary_BiIDMB_GateAFFB': 'S_Mamba_Stationary_BiIDMB_GateAFFB',
+        'S_Mamba_Stationary_BiIDMB_GateAFFB_V1.0': 'S_Mamba_Stationary_BiIDMB_GateAFFB_V1_0',
+        'S_Mamba_Stationary_BiIDMB_GateAFFB_V1.1': 'S_Mamba_Stationary_BiIDMB_GateAFFB_V1_1',
+        'S_Mamba_Stationary_BiIDMB_GateAFFB_V1.2': 'S_Mamba_Stationary_BiIDMB_GateAFFB_V1_2',
+        'S_Mamba_Stationary_BiIDMB_GateAFFB_V1.3': 'S_Mamba_Stationary_BiIDMB_GateAFFB_V1_3',
+    }
+    args.model = model_name_aliases.get(args.model, args.model)
     args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
 
     if args.use_gpu and args.use_multi_gpu:
