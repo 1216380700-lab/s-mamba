@@ -8,7 +8,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from layers.Mamba_EncDec import Encoder, EncoderLayer
+from layers.Mamba_EncDec import Encoder, EncoderLayer, AdaptiveFourierFilterBlock
 from layers.Embed import DataEmbedding_inverted
 
 from mamba_ssm import Mamba
@@ -27,6 +27,8 @@ class Model(nn.Module):
         self.enc_embedding = DataEmbedding_inverted(configs.seq_len, configs.d_model, configs.embed, configs.freq,
                                                     configs.dropout)
         self.class_strategy = configs.class_strategy
+        # [创新点: 串行解耦] 阶段1 - 频域时序降噪
+        self.affb_frontend = AdaptiveFourierFilterBlock(configs.seq_len)
         # Encoder-only architecture
         self.encoder = Encoder(
             [
@@ -51,10 +53,15 @@ class Model(nn.Module):
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
+
+
+
         self.projector = nn.Linear(configs.d_model, configs.pred_len, bias=True)
         
-        # 宏观残差权重：初始化偏向一个较小的值，让优化器动态决定是否启用"原始高频"直连
-        self.macro_weight = nn.Parameter(torch.ones(1) * 0.1)
+        # 动态门控宏观残差 (V1.2 Upgrade: Dynamic Gated Bypass)
+        self.skip_gate = nn.Linear(configs.d_model, configs.d_model)
+        torch.nn.init.zeros_(self.skip_gate.weight)
+        torch.nn.init.constant_(self.skip_gate.bias, -2.0)
     # a = self.get_parameter_number()
     #
     # def get_parameter_number(self):
@@ -77,6 +84,10 @@ class Model(nn.Module):
             stdev = torch.sqrt(torch.var(x_enc, dim=1, keepdim=True, unbiased=False) + 1e-5)
             x_enc /= stdev
 
+        # ---- 串行解耦阶段1：在物理时间轴上做可学习的频域滤波与降噪 ----
+        # Data shape is [Batch, Length(Time), Variate], true time is dim=1
+        x_enc = self.affb_frontend(x_enc)
+
         _, _, N = x_enc.shape # B L N
         # B: batch_size;    E: d_model; 
         # L: seq_len;       S: pred_len;
@@ -94,8 +105,9 @@ class Model(nn.Module):
         enc_out, attns = self.encoder(enc_out, attn_mask=None)
         
         # [宏观级跳跃连接 / Subsumption Architecture] 
-        # 将原始高频信息强行透传到预测头，由模型自适应决定利用多少"未平滑"的原始序列
-        enc_out = enc_out + self.macro_weight * raw_enc_out
+        # V1.2 Upgrade: 动态门控系统，根据具体变量的高低频特性分别计算出直连权重（跳过深度平滑去噪的比例）
+        gate = torch.sigmoid(self.skip_gate(raw_enc_out))
+        enc_out = enc_out + gate * raw_enc_out
 
         # B N E -> B N S -> B S N 
         dec_out = self.projector(enc_out).permute(0, 2, 1)[:, :, :N] # filter the covariates
