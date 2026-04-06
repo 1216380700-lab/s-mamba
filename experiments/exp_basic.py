@@ -52,6 +52,13 @@ class Exp_Basic(object):
             'Flashformer_M': Flashformer_M,
             'Autoformer': Autoformer,
             'Autoformer_M': Autoformer_M,
+
+            'S_Mamba': S_Mamba,
+            'S_Mamba_AFFB': S_Mamba,
+            'S_Mamba_GateAFFB': S_Mamba,
+            'S_Mamba_BiIDMB': S_Mamba,
+            'S_Mamba_BiIDMB_GateAFFB': S_Mamba,
+            'S_Mamba_Stationary_BiIDMB_GateAFFB': S_Mamba,
         }
 
         self.args.model = self.model_aliases.get(self.args.model, self.args.model)
